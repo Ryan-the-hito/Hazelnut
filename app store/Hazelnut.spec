@@ -3,18 +3,23 @@
 
 block_cipher = None
 
-__version__ = '0.0.4'
+__version__ = '0.0.6'
 
 info_plist = {
     'LSUIElement': True,
     #'LSBackgroundOnly': True,
     'NSHumanReadableCopyright': 'Copyright © 2025 Yixiang SHEN. All rights reserved.',
-    'CFBundleVersion': '5',
+    'CFBundleVersion': '8',
+    'CFBundleShortVersionString': '0.0.6',
     "LSApplicationCategoryType": "public.app-category.productivity",
     "com.apple.security.app-sandbox": True,
     "NSPrincipalClass": "NSApplication",
     "LSMinimumSystemVersion": "15.0",
+    'NSHighResolutionCapable': True,
     "ITSAppUsesNonExemptEncryption": False,
+    "CFBundleDisplayName": "Hazelnut Tags", 
+    "CFBundleName": "Hazelnut Tags", 
+    'NSAppleEventsUsageDescription': 'This app sends AppleEvents to control other applications.'
 }
 
 a = Analysis(
@@ -40,7 +45,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='Hazelnut',
+    name='Hazelnut Tags',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -60,11 +65,11 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='Hazelnut',
+    name='Hazelnut Tags',
 )
 app = BUNDLE(
     coll,
-    name='Hazelnut.app',
+    name='Hazelnut Tags.app',
     icon='Hazelnut-desk-26.icns',
     info_plist=info_plist,
     bundle_identifier='com.ryanthehito.hazelnut',

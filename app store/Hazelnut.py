@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (QWidget, QPushButton, QApplication,
 							 QLabel, QHBoxLayout, QVBoxLayout, QLineEdit,
 							 QSystemTrayIcon, QMenu, QDialog, QMenuBar, QCheckBox,
 							 QTextEdit, QComboBox, QListWidget, QFileDialog, QGraphicsOpacityEffect,
-							 QStackedWidget, QScrollArea, QGraphicsDropShadowEffect, QMainWindow)
+							 QStackedWidget, QScrollArea, QGraphicsDropShadowEffect, QMainWindow, QSizePolicy)
 from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal, QSize, QUrl, QPropertyAnimation, QEasingCurve, QRectF, QPoint, QRect
 from PyQt6.QtGui import QAction, QIcon, QColor, QMovie, QDesktopServices, QPixmap, QPainter, QPainterPath, QPainter, QPen, QBrush, QLinearGradient, QMouseEvent, QImage, QSurfaceFormat
 import PyQt6.QtGui
@@ -113,33 +113,33 @@ menu = QMenu()
 action7 = QAction("⚙️ Settings")
 menu.addAction(action7)
 
-action10 = QAction("🛠️ Start on login")
-action10.setCheckable(True)
-menu.addAction(action10)
-plist_filename = 'com.ryanthehito.hazelnut.plist'
-launch_agents_dir = Path.home() / "Library" / "LaunchAgents"
-launch_agents_dir.mkdir(parents=True, exist_ok=True)
-destination = launch_agents_dir / plist_filename
-if os.path.exists(destination):
-	action10.setChecked(True)
-else:
-	action10.setChecked(False)
+# action10 = QAction("🛠️ Start on login")
+# action10.setCheckable(True)
+# menu.addAction(action10)
+# plist_filename = 'com.ryanthehito.hazelnut.plist'
+# launch_agents_dir = Path.home() / "Library" / "LaunchAgents"
+# launch_agents_dir.mkdir(parents=True, exist_ok=True)
+# destination = launch_agents_dir / plist_filename
+# if os.path.exists(destination):
+# 	action10.setChecked(True)
+# else:
+# 	action10.setChecked(False)
 
 menu.addSeparator()
 
-action2 = QAction("🆕 Check for Updates")
-menu.addAction(action2)
+# action2 = QAction("🆕 Check for Updates")
+# menu.addAction(action2)
 
 action1 = QAction("ℹ️ About")
 menu.addAction(action1)
 
-# action9 = QAction("🔤 Guide and Support")
-# menu.addAction(action9)
+action9 = QAction("🔤 Guide and Support")
+menu.addAction(action9)
 
 menu.addSeparator()
 
-action8 = QAction("🔁 Restart")
-menu.addAction(action8)
+# action8 = QAction("🔁 Restart")
+# menu.addAction(action8)
 
 # Add a Quit option to the menu.
 quit = QAction("Quit")
@@ -149,7 +149,7 @@ menu.addAction(quit)
 tray.setContextMenu(menu)
 
 # create a system menu
-btna4 = QAction("&Switch on Hazelnut!")
+btna4 = QAction("&Switch on Hazelnut Tags!")
 btna5 = QAction("&Set!")
 btna6 = QAction("&Quit!")
 sysmenu = QMenuBar()
@@ -201,7 +201,7 @@ class window_about(QWidget):  # 增加说明页面(About)
 
 	def init_ui(self):
 		self.setUpMainWindow()
-		self.setFixedSize(400, 600)
+		self.setFixedSize(400, 460)
 		self.center()
 		self.setFocus()
 
@@ -260,7 +260,7 @@ class window_about(QWidget):  # 增加说明页面(About)
 		widg1.setLayout(blay1)
 
 		widg2 = QWidget()
-		lbl0 = QLabel('Hazelnut', self)
+		lbl0 = QLabel('Hazelnut Tags', self)
 		font = PyQt6.QtGui.QFont()
 		font.setFamily("Arial")
 		font.setBold(True)
@@ -274,7 +274,7 @@ class window_about(QWidget):  # 增加说明页面(About)
 		widg2.setLayout(blay2)
 
 		widg3 = QWidget()
-		lbl1 = QLabel('Version 0.0.4', self)
+		lbl1 = QLabel('Version 0.0.5', self)
 		blay3 = QHBoxLayout()
 		blay3.setContentsMargins(0, 0, 0, 0)
 		blay3.addStretch()
@@ -334,52 +334,52 @@ class window_about(QWidget):  # 增加说明页面(About)
 		blay8.addStretch()
 		widg8.setLayout(blay8)
 
-		bt7 = WhiteButton('Buy me a cup of coffee☕')
-		bt7.setMinimumWidth(215)
-		bt7.clicked.connect(self.coffee)
-		widg8_5 = QWidget()
-		widg8_5.setFixedHeight(50)
-		blay8_5 = QHBoxLayout()
-		blay8_5.setContentsMargins(0, 0, 0, 0)
-		blay8_5.addStretch()
-		blay8_5.addWidget(bt7)
-		blay8_5.addStretch()
-		widg8_5.setLayout(blay8_5)
-
-		widg9 = QWidget()
-		widg9.setFixedHeight(70)
-		bt3 = WhiteButton('🍪\n¥5')
-		bt3.setMaximumHeight(50)
-		bt3.setMinimumHeight(50)
-		bt3.setMinimumWidth(50)
-		bt3.clicked.connect(self.donate)
-		bt4 = WhiteButton('🥪\n¥10')
-		bt4.setMaximumHeight(50)
-		bt4.setMinimumHeight(50)
-		bt4.setMinimumWidth(50)
-		bt4.clicked.connect(self.donate2)
-		bt5 = WhiteButton('🍜\n¥20')
-		bt5.setMaximumHeight(50)
-		bt5.setMinimumHeight(50)
-		bt5.setMinimumWidth(50)
-		bt5.clicked.connect(self.donate3)
-		bt6 = WhiteButton('🍕\n¥50')
-		bt6.setMaximumHeight(50)
-		bt6.setMinimumHeight(50)
-		bt6.setMinimumWidth(50)
-		bt6.clicked.connect(self.donate4)
-		blay9 = QHBoxLayout()
-		blay9.setContentsMargins(0, 0, 0, 0)
-		blay9.addStretch()
-		blay9.addWidget(bt3)
-		blay9.addWidget(bt4)
-		blay9.addWidget(bt5)
-		blay9.addWidget(bt6)
-		blay9.addStretch()
-		widg9.setLayout(blay9)
+		# bt7 = WhiteButton('Buy me a cup of coffee☕')
+		# bt7.setMinimumWidth(215)
+		# bt7.clicked.connect(self.coffee)
+		# widg8_5 = QWidget()
+		# widg8_5.setFixedHeight(50)
+		# blay8_5 = QHBoxLayout()
+		# blay8_5.setContentsMargins(0, 0, 0, 0)
+		# blay8_5.addStretch()
+		# blay8_5.addWidget(bt7)
+		# blay8_5.addStretch()
+		# widg8_5.setLayout(blay8_5)
+		#
+		# widg9 = QWidget()
+		# widg9.setFixedHeight(70)
+		# bt3 = WhiteButton('🍪\n¥5')
+		# bt3.setMaximumHeight(50)
+		# bt3.setMinimumHeight(50)
+		# bt3.setMinimumWidth(50)
+		# bt3.clicked.connect(self.donate)
+		# bt4 = WhiteButton('🥪\n¥10')
+		# bt4.setMaximumHeight(50)
+		# bt4.setMinimumHeight(50)
+		# bt4.setMinimumWidth(50)
+		# bt4.clicked.connect(self.donate2)
+		# bt5 = WhiteButton('🍜\n¥20')
+		# bt5.setMaximumHeight(50)
+		# bt5.setMinimumHeight(50)
+		# bt5.setMinimumWidth(50)
+		# bt5.clicked.connect(self.donate3)
+		# bt6 = WhiteButton('🍕\n¥50')
+		# bt6.setMaximumHeight(50)
+		# bt6.setMinimumHeight(50)
+		# bt6.setMinimumWidth(50)
+		# bt6.clicked.connect(self.donate4)
+		# blay9 = QHBoxLayout()
+		# blay9.setContentsMargins(0, 0, 0, 0)
+		# blay9.addStretch()
+		# blay9.addWidget(bt3)
+		# blay9.addWidget(bt4)
+		# blay9.addWidget(bt5)
+		# blay9.addWidget(bt6)
+		# blay9.addStretch()
+		# widg9.setLayout(blay9)
 
 		widg10 = QWidget()
-		lbl6 = QLabel('© 2022-2025 Ryan-the-hito. All rights reserved.', self)
+		lbl6 = QLabel('© 2025 Yixiang SHEN. All rights reserved.', self)
 		blay10 = QHBoxLayout()
 		blay10.setContentsMargins(0, 0, 0, 0)
 		blay10.addStretch()
@@ -404,8 +404,8 @@ class window_about(QWidget):  # 增加说明页面(About)
 		main_h_box.addWidget(widg7)
 		main_h_box.addStretch()
 		main_h_box.addWidget(widg8)
-		main_h_box.addWidget(widg8_5)
-		main_h_box.addWidget(widg9)
+		# main_h_box.addWidget(widg8_5)
+		# main_h_box.addWidget(widg9)
 		main_h_box.addWidget(widg10)
 		main_h_box.addStretch()
 		main_h_box.addSpacing(10)
@@ -1968,6 +1968,140 @@ class HorizontalButtonWindow(OuterWidget):
 		event.ignore()  # 忽略鼠标移动事件
 
 
+class PermissionInfoWidget(QWidget):
+	def __init__(self):
+		super().__init__()
+		self.radius = 16  # 圆角半径，可按 macOS 15 或 26 设置为 16~26
+
+		self.setWindowFlags(
+			Qt.WindowType.FramelessWindowHint |
+			Qt.WindowType.Window |
+			Qt.WindowType.WindowStaysOnTopHint
+		)
+		self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+		self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
+
+		self.init_ui()
+
+	def init_ui(self):
+		self.setUpMainWindow()
+		self.setFixedSize(400, 600)
+		self.center()
+		self.setFocus()
+
+	def paintEvent(self, event):
+		painter = QPainter(self)
+		painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+		painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+
+		rect = QRectF(self.rect())
+		path = QPainterPath()
+		path.addRoundedRect(rect, self.radius, self.radius)
+
+		painter.setClipPath(path)
+		painter.fillPath(path, QColor(255, 255, 255, 255))  # 纯白背景
+
+	# 让无边框窗口可拖动
+	def mousePressEvent(self, event):
+		if event.button() == Qt.MouseButton.LeftButton:
+			self.drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+			event.accept()
+
+	def mouseMoveEvent(self, event):
+		if event.buttons() == Qt.MouseButton.LeftButton:
+			self.move(event.globalPosition().toPoint() - self.drag_pos)
+			event.accept()
+
+	def setUpMainWindow(self):
+		# 添加关闭按钮（仿 macOS 左上角红色圆点）
+		self.close_button = QPushButton(self)
+		self.close_button.setFixedSize(12, 12)
+		self.close_button.move(10, 10)
+		self.close_button.setStyleSheet("""
+					QPushButton {
+						background-color: #FF5F57;
+						border-radius: 6px;
+						border: none;
+					}
+					QPushButton:hover {
+						background-color: #BF4943;
+					}
+				""")
+		self.close_button.clicked.connect(self.close)
+
+		layout = QVBoxLayout()
+
+		title = QLabel("<h2>Permissions Required</h2>")
+		title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+		layout.addWidget(title)
+
+		info_text = (
+			"<b>This application requires the following macOS permissions:</b><br><br>"
+			"<b>1. Accessibility</b> and <b>Input Monitoring</b>:<br>"
+			"These permissions are required to detect mouse drag actions, "
+			"which are used to trigger the main interface. "
+			"The app does <b>not</b> monitor your input for any other purpose.<br><br>"
+			"<b>2. AppleEvents:</b><br>"
+			"AppleEvents are used to enable the tag functionality within the app. "
+			"This is necessary for the app to work as intended.<br><br>"
+			"<b>File Access:</b><br>"
+			"All file access is performed <b>only</b> as a result of your explicit actions. "
+			"The app will <b>never</b> access any files automatically or without your direct request.<br><br>"
+			"<hr>"
+			"<b>How to grant Accessibility and Input Monitoring permissions:</b><br>"
+			"1. Open <b>System Settings</b> (or <b>System Preferences</b> on older macOS).<br>"
+			"2. Go to <b>Privacy & Security</b>.<br>"
+			"3. Select <b>Accessibility</b> from the sidebar.<br>"
+			"4. Click the <b>+</b> button and add this application.<br>"
+			"5. Repeat for <b>Input Monitoring</b>.<br>"
+			"6. Restart the app if necessary.<br><br>"
+			"For AppleEvents, macOS will prompt you automatically when needed.<br><br>"
+			"<hr>"
+			"<b>How to use this application:</b><br>"
+			"1. In <b>Finder</b>, select a file or folder.<br>"
+			"2. Drag it back and forth a few times.<br>"
+			"3. A circular button will appear on the screen.<br>"
+			"4. Drop the file or folder onto this circular button.<br>"
+			"5. A set of color tags will be displayed for you to choose from.<br>"
+			"6. You can also manually enter a custom text tag below.<br><br>"
+			"To avoid unnecessary interruptions, you can configure in the settings which applications the drag gesture will respond to. "
+			"By default, the app only responds to actions in Finder, but you can customize it to work with other applications as well.<br><br>"
+			"<b>Enjoy using this app! 😊🎉</b>"
+		)
+
+		info_label = QTextEdit()
+		info_label.setReadOnly(True)
+		info_label.setHtml(info_text)
+		info_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+		layout.addWidget(info_label)
+
+		self.setLayout(layout)
+
+	def first_show_window(self):
+		home_dir = base_dir
+		tarname1 = "HazelnutAppPath"
+		fulldir1 = os.path.join(home_dir, tarname1)
+		if not os.path.exists(fulldir1):
+			os.mkdir(fulldir1)
+		tarname2 = "Permission.txt"
+		self.fulldir4 = os.path.join(fulldir1, tarname2)
+		if not os.path.exists(self.fulldir4):
+			self.show()
+			self.raise_()
+			with open(self.fulldir4, 'a', encoding='utf-8') as f0:
+				f0.write('shown')
+
+	def show_window(self):
+		self.show()
+		self.raise_()
+
+	def center(self):  # 设置窗口居中
+		qr = self.frameGeometry()
+		cp = self.screen().availableGeometry().center()
+		qr.moveCenter(cp)
+		self.move(qr.topLeft())
+
+
 class GlassLineEdit(QLineEdit):
 	def __init__(self, parent=None):
 		super().__init__(parent)
@@ -2484,49 +2618,49 @@ class window4(QWidget):  # Customization settings
 
 	def restart_app(self):
 		applescript = '''
-	    if application "Hazelnut" is running then
+		if application "Hazelnut Tags" is running then
 			try
-				tell application "Hazelnut"
+				tell application "Hazelnut Tags"
 					quit
 					delay 1
 					activate
 				end tell
 			on error number -128
-				quit application "Hazelnut"
+				quit application "Hazelnut Tags"
 				delay 1
-				activate application "Hazelnut"
+				activate application "Hazelnut Tags"
 			end try
 		end if
-	    '''
+		'''
 		subprocess.Popen(['osascript', '-e', applescript])
 
-	def login_start(self):
-		plist_filename = 'com.ryanthehito.hazelnut.plist'
-		if action10.isChecked():
-			try:
-				launch_agents_dir = Path.home() / "Library" / "LaunchAgents"
-				launch_agents_dir.mkdir(parents=True, exist_ok=True)
-				plist_source_path = BasePath + plist_filename
-				destination = launch_agents_dir / plist_filename
-				shutil.copy2(plist_source_path, destination)
-				# 设置权限确保 macOS 能读
-				os.chmod(destination, 0o644)
-			except Exception as e:
-				# 发生异常时打印错误信息
-				p = "程序发生异常: Autostart failed: " + str(e)
-				with open(BasePath + "Error.txt", 'a', encoding='utf-8') as f0:
-					f0.write(p)
-		if not action10.isChecked():
-			try:
-				plist_path = Path.home() / "Library" / "LaunchAgents" / plist_filename
-				if plist_path.exists():
-					# 删除文件
-					os.remove(plist_path)
-			except Exception as e:
-				# 发生异常时打印错误信息
-				p = "程序发生异常: Removing autostart failed: " + str(e)
-				with open(BasePath + "Error.txt", 'a', encoding='utf-8') as f0:
-					f0.write(p)
+	# def login_start(self):
+	# 	plist_filename = 'com.ryanthehito.hazelnut.plist'
+	# 	if action10.isChecked():
+	# 		try:
+	# 			launch_agents_dir = Path.home() / "Library" / "LaunchAgents"
+	# 			launch_agents_dir.mkdir(parents=True, exist_ok=True)
+	# 			plist_source_path = BasePath + plist_filename
+	# 			destination = launch_agents_dir / plist_filename
+	# 			shutil.copy2(plist_source_path, destination)
+	# 			# 设置权限确保 macOS 能读
+	# 			os.chmod(destination, 0o644)
+	# 		except Exception as e:
+	# 			# 发生异常时打印错误信息
+	# 			p = "程序发生异常: Autostart failed: " + str(e)
+	# 			with open(BasePath + "Error.txt", 'a', encoding='utf-8') as f0:
+	# 				f0.write(p)
+	# 	if not action10.isChecked():
+	# 		try:
+	# 			plist_path = Path.home() / "Library" / "LaunchAgents" / plist_filename
+	# 			if plist_path.exists():
+	# 				# 删除文件
+	# 				os.remove(plist_path)
+	# 		except Exception as e:
+	# 			# 发生异常时打印错误信息
+	# 			p = "程序发生异常: Removing autostart failed: " + str(e)
+	# 			with open(BasePath + "Error.txt", 'a', encoding='utf-8') as f0:
+	# 				f0.write(p)
 	
 	def center(self):  # 设置窗口居中
 		qr = self.frameGeometry()
@@ -2539,9 +2673,9 @@ class window4(QWidget):  # Customization settings
 			self.close()
 	
 	def activate(self):  # 设置窗口显示
-		w2.checkupdate()
-		if w2.lbl2.text() != 'No Intrenet' and 'ready' in w2.lbl2.text():
-			w2.show()
+		# w2.checkupdate()
+		# if w2.lbl2.text() != 'No Intrenet' and 'ready' in w2.lbl2.text():
+		# 	w2.show()
 
 		never_react = codecs.open(self.fulldir3, 'r', encoding='utf-8').read()
 		never_react_list = never_react.split('\n')
@@ -2623,13 +2757,13 @@ style_sheet_ori = '''
 		background-color: #FFFFFF;
 }
 	QTextEdit{
-		border: 1px solid grey;  
+		border: 1px grey;  
 		border-radius:4px;
 		padding: 1px 5px 1px 3px; 
 		background-clip: border;
 		background-color: #F3F2EE;
 		color: #000000;
-		font: 14pt Times New Roman;
+		font: 14pt;
 }
 	QListWidget{
 		border: 1px grey;  
@@ -2657,7 +2791,7 @@ if __name__ == '__main__':
 			monitor.start()  # 启动监听
 
 			w1 = window_about()  # about
-			w2 = window_update()  # update
+			#w2 = window_update()  # update
 			w4 = window4()  # CUSTOMIZING
 			# w5 = SliderWindow() # guide
 			# w5.setAutoFillBackground(True)
@@ -2669,13 +2803,15 @@ if __name__ == '__main__':
 			# p = w3.palette()
 			# p.setColor(w3.backgroundRole(), QColor('#ECECEC'))
 			# w3.setPalette(p)
+			permission = PermissionInfoWidget()
+			permission.first_show_window()
 			action1.triggered.connect(w1.activate)
-			action2.triggered.connect(w2.activate)
+			#action2.triggered.connect(w2.activate)
 			# action3.triggered.connect(w3.activate)
 			action7.triggered.connect(w4.activate)
-			action8.triggered.connect(w4.restart)
-			# action9.triggered.connect(w5.show)
-			action10.triggered.connect(w4.login_start)
+			# action8.triggered.connect(w4.restart)
+			action9.triggered.connect(permission.show_window)
+			# action10.triggered.connect(w4.login_start)
 			# btna4.triggered.connect(w3.activate)
 			# btna5.triggered.connect(w4.activate)
 			# btna6.triggered.connect(w4.totalquit)
