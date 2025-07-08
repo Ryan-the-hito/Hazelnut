@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (QWidget, QPushButton, QApplication,
 							 QTextEdit, QComboBox, QListWidget, QFileDialog, QGraphicsOpacityEffect,
 							 QStackedWidget, QScrollArea, QGraphicsDropShadowEffect, QMainWindow, QSizePolicy)
 from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal, QSize, QUrl, QPropertyAnimation, QEasingCurve, QRectF, QPoint, QRect
-from PyQt6.QtGui import QAction, QIcon, QColor, QMovie, QDesktopServices, QPixmap, QPainter, QPainterPath, QPainter, QPen, QBrush, QLinearGradient, QMouseEvent, QImage, QSurfaceFormat
+from PyQt6.QtGui import QAction, QIcon, QColor, QMovie, QDesktopServices, QPixmap, QPainter, QPainterPath, QPainter, QPen, QBrush, QLinearGradient, QMouseEvent, QImage, QSurfaceFormat, QPalette
 import PyQt6.QtGui
 import PyQt6.sip
 import webbrowser
@@ -37,9 +37,10 @@ import time
 import math
 import shutil
 import platform
+import objc
 try:
 	from AppKit import NSWorkspace, NSScreen
-	from Foundation import NSObject
+	from Foundation import NSObject, NSNotificationCenter, NSSelectorFromString, NSDistributedNotificationCenter, NSUserDefaults
 except ImportError:
 	print("can't import AppKit -- maybe you're running python from homebrew?")
 	print("try running with /usr/bin/python instead")
@@ -52,8 +53,116 @@ fmt = QSurfaceFormat()
 fmt.setSamples(8)  # 打开 MSAA 多重采样抗锯齿
 QSurfaceFormat.setDefaultFormat(fmt)
 
+def is_dark_theme(app):
+	defaults = NSUserDefaults.standardUserDefaults()
+	style = defaults.stringForKey_("AppleInterfaceStyle")
+	return style == "Dark"
+
+def set_light_palette(app):
+	palette = QPalette()
+	palette.setColor(QPalette.ColorRole.Window, QColor(255, 255, 255))
+	palette.setColor(QPalette.ColorRole.WindowText, QColor(0, 0, 0))
+	palette.setColor(QPalette.ColorRole.Base, QColor(255, 255, 255))
+	palette.setColor(QPalette.ColorRole.Text, QColor(0, 0, 0))
+	palette.setColor(QPalette.ColorRole.Button, QColor(240, 240, 240))
+	palette.setColor(QPalette.ColorRole.ButtonText, QColor(0, 0, 0))
+	app.setPalette(palette)
+	light_sheet = '''
+	QTextEdit{
+		border: 1px grey;  
+		border-radius:4px;
+		padding: 1px 5px 1px 3px; 
+		background-clip: border;
+		background-color: #F3F2EE;
+		color: #000000;
+		font: 14pt;
+	}
+	QListWidget{
+		border: 1px grey;  
+		border-radius:4px;
+		padding: 1px 5px 1px 3px; 
+		background-clip: border;
+		background-color: #F3F2EE;
+		color: #000000;
+		font: 14pt;
+	}
+	QLabel{
+		color: #000000;
+	}
+	'''
+	app.setStyleSheet(light_sheet)
+
+def set_dark_palette(app):
+	palette = QPalette()
+	palette.setColor(QPalette.ColorRole.Window, QColor(30, 30, 30))
+	palette.setColor(QPalette.ColorRole.WindowText, QColor(220, 220, 220))
+	palette.setColor(QPalette.ColorRole.Base, QColor(40, 40, 40))
+	palette.setColor(QPalette.ColorRole.Text, QColor(220, 220, 220))
+	palette.setColor(QPalette.ColorRole.Button, QColor(50, 50, 50))
+	palette.setColor(QPalette.ColorRole.ButtonText, QColor(220, 220, 220))
+	app.setPalette(palette)
+	dark_sheet = '''
+	QTextEdit{
+		border: 1px grey;  
+		border-radius:4px;
+		padding: 1px 5px 1px 3px; 
+		background-clip: border;
+		background-color: #2D2D2D;
+		color: #FFFFFF;
+		font: 14pt;
+	}
+	QListWidget{
+		border: 1px grey;  
+		border-radius:4px;
+		padding: 1px 5px 1px 3px; 
+		background-clip: border;
+		background-color: #2D2D2D;
+		color: #FFFFFF;
+		font: 14pt;
+	}
+	QLabel{
+		color: #FFFFFF;
+	}
+		'''
+	app.setStyleSheet(dark_sheet)
+
+
+class ThemeObserver(NSObject):
+	def initWithApp_(self, app):
+		self = objc.super(ThemeObserver, self).init()
+		self.app = app
+		return self
+
+	def themeChanged_(self, notification):
+		# 主题变更时自动切换 palette
+		if is_dark_theme(self.app):
+			set_dark_palette(self.app)
+			#print("Dark theme changed")
+		else:
+			set_light_palette(self.app)
+			#print("Light theme changed")
+
+
+def install_theme_observer(app):
+	observer = ThemeObserver.alloc().initWithApp_(app)
+	center = NSDistributedNotificationCenter.defaultCenter()
+	center.addObserver_selector_name_object_(
+		observer,
+		NSSelectorFromString("themeChanged:"),
+		"AppleInterfaceThemeChangedNotification",
+		None
+	)
+	return observer
+
 app = QApplication(sys.argv)
 app.setQuitOnLastWindowClosed(False)
+
+if is_dark_theme(app):
+	set_dark_palette(app)
+else:
+	set_light_palette(app)
+
+theme_observer = install_theme_observer(app)
 
 
 def is_macos_16_or_higher():
@@ -73,13 +182,13 @@ BasePath = str(os.path.join(base_dir, resource_tarname))
 # base_dir = ''  # test
 
 # copy items from app to basepath
-old_base_path = Path('/Applications/Hazelnut.app/Contents/Resources/')
+old_base_path = Path('/Applications/Hazelnut Tags.app/Contents/Resources/')
 if getattr(sys, 'frozen', False):  # 判断是否是打包后的应用
 	old_base_path = Path(sys.executable).parent.parent / "Resources"
 else:
 	# 开发环境路径（可以自定义）
 	old_base_path = Path(__file__).parent / "Resources"
-	#old_base_path = Path('/Applications/Hazelnut.app/Contents/Resources')  # test
+	#old_base_path = Path('/Applications/Hazelnut Tags.app/Contents/Resources')  # test
 source_dir = old_base_path
 target_dir = os.path.join(base_dir, resource_tarname)
 # 只在目标目录不存在文件时才复制
@@ -185,6 +294,62 @@ class WhiteButton(QPushButton):
 		self.setGraphicsEffect(shadow)
 
 
+class MacWindowButton(QPushButton):
+	def __init__(self, color, symbol, parent=None):
+		super().__init__(parent)
+		self.setFixedSize(12, 12)
+		self.base_color = QColor(color)
+		self.symbol = symbol  # "x", "-", "+"
+		self.hovered = False
+		self.setStyleSheet("border: none; background: transparent;")
+
+	def enterEvent(self, event):
+		self.hovered = True
+		self.update()
+		super().enterEvent(event)
+
+	def leaveEvent(self, event):
+		self.hovered = False
+		self.update()
+		super().leaveEvent(event)
+
+	def paintEvent(self, event):
+		painter = QPainter(self)
+		painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+		painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+		# # 1. 选择底色
+		# if self.hovered:
+		# 	# hover 时用更深的颜色
+		# 	if self.symbol == "x":
+		# 		color = QColor("#BF4943")
+		# 	elif self.symbol == "-":
+		# 		color = QColor("#B29B32")
+		# 	elif self.symbol == "+":
+		# 		color = QColor("#24912D")
+		# 	else:
+		# 		color = self.base_color
+		# else:
+		# 	color = self.base_color
+		# Draw circle
+		painter.setBrush(self.base_color)
+		painter.setPen(Qt.PenStyle.NoPen)
+		painter.drawEllipse(0, 0, self.width(), self.height())
+		# Draw symbol if hovered
+		if self.hovered:
+			pen = QPen(QColor("black"))
+			pen.setWidth(1)
+			painter.setPen(pen)
+			margin = 4  # 增大 margin，叉号更小
+			if self.symbol == "x":
+				painter.drawLine(margin, margin, self.width()-margin, self.height()-margin)
+				painter.drawLine(self.width()-margin, margin, margin, self.height()-margin)
+			elif self.symbol == "-":
+				painter.drawLine(margin, self.height()//2, self.width()-margin, self.height()//2)
+			elif self.symbol == "+":
+				painter.drawLine(self.width()//2, margin, self.width()//2, self.height()-margin)
+				painter.drawLine(margin, self.height()//2, self.width()-margin, self.height()//2)
+
+
 class window_about(QWidget):  # 增加说明页面(About)
 	def __init__(self):
 		super().__init__()
@@ -215,7 +380,8 @@ class window_about(QWidget):  # 增加说明页面(About)
 		path.addRoundedRect(rect, self.radius, self.radius)
 
 		painter.setClipPath(path)
-		painter.fillPath(path, QColor(255, 255, 255, 255))  # 纯白背景
+		bg_color = self.palette().color(QPalette.ColorRole.Window)
+		painter.fillPath(path, bg_color)
 
 	# 让无边框窗口可拖动
 	def mousePressEvent(self, event):
@@ -230,20 +396,33 @@ class window_about(QWidget):  # 增加说明页面(About)
 
 	def setUpMainWindow(self):
 		# 添加关闭按钮（仿 macOS 左上角红色圆点）
-		self.close_button = QPushButton(self)
-		self.close_button.setFixedSize(12, 12)
+		# self.close_button = QPushButton(self)
+		# self.close_button.setFixedSize(12, 12)
+		# self.close_button.move(10, 10)
+		# self.close_button.setStyleSheet("""
+		# 	QPushButton {
+		# 		background-color: #FF5F57;
+		# 		border-radius: 6px;
+		# 		border: none;
+		# 	}
+		# 	QPushButton:hover {
+		# 		background-color: #BF4943;
+		# 	}
+		# """)
+		# self.close_button.clicked.connect(self.close)
+		# 三个按钮
+		##FF5F57
+		self.close_button = MacWindowButton("#FF605C", "x", self)
 		self.close_button.move(10, 10)
-		self.close_button.setStyleSheet("""
-			QPushButton {
-				background-color: #FF5F57;
-				border-radius: 6px;
-				border: none;
-			}
-			QPushButton:hover {
-				background-color: #BF4943;
-			}
-		""")
 		self.close_button.clicked.connect(self.close)
+		##FFBD2E
+		# self.min_button = MacWindowButton("#FFBD44", "-", self)
+		# self.min_button.move(30, 10)
+		# self.min_button.clicked.connect(self.showMinimized)
+		##28C940
+		# self.max_button = MacWindowButton("#00CA4E", "+", self)
+		# self.max_button.move(50, 10)
+		# self.max_button.clicked.connect(self.showMaximized)
 
 		widg1 = QWidget()
 		l1 = QLabel(self)
@@ -274,7 +453,7 @@ class window_about(QWidget):  # 增加说明页面(About)
 		widg2.setLayout(blay2)
 
 		widg3 = QWidget()
-		lbl1 = QLabel('Version 0.0.5', self)
+		lbl1 = QLabel('Version 0.0.7', self)
 		blay3 = QHBoxLayout()
 		blay3.setContentsMargins(0, 0, 0, 0)
 		blay3.addStretch()
@@ -772,7 +951,8 @@ class window_update(QWidget):  # 增加更新页面（Check for Updates）
 		path.addRoundedRect(rect, self.radius, self.radius)
 
 		painter.setClipPath(path)
-		painter.fillPath(path, QColor(255, 255, 255, 255))  # 纯白背景
+		bg_color = self.palette().color(QPalette.ColorRole.Window)
+		painter.fillPath(path, bg_color)
 
 	# 让无边框窗口可拖动
 	def mousePressEvent(self, event):
@@ -787,19 +967,22 @@ class window_update(QWidget):  # 增加更新页面（Check for Updates）
 
 	def setUpMainWindow(self):
 		# 添加关闭按钮（仿 macOS 左上角红色圆点）
-		self.close_button = QPushButton(self)
-		self.close_button.setFixedSize(12, 12)
+		# self.close_button = QPushButton(self)
+		# self.close_button.setFixedSize(12, 12)
+		# self.close_button.move(10, 10)
+		# self.close_button.setStyleSheet("""
+		# 	QPushButton {
+		# 		background-color: #FF5F57;
+		# 		border-radius: 6px;
+		# 		border: none;
+		# 	}
+		# 	QPushButton:hover {
+		# 		background-color: #BF4943;
+		# 	}
+		# """)
+		# self.close_button.clicked.connect(self.close)
+		self.close_button = MacWindowButton("#FF605C", "x", self)
 		self.close_button.move(10, 10)
-		self.close_button.setStyleSheet("""
-			QPushButton {
-				background-color: #FF5F57;
-				border-radius: 6px;
-				border: none;
-			}
-			QPushButton:hover {
-				background-color: #BF4943;
-			}
-		""")
 		self.close_button.clicked.connect(self.close)
 
 		widg5 = QWidget()
@@ -1842,10 +2025,13 @@ class OuterWidget(QWidget):
 		rect = QRectF(0, 0, self.width(), self.height())
 		path = QPainterPath()
 		path.addRoundedRect(rect, 16, 16)
+		bg_color = self.palette().color(QPalette.ColorRole.Window)
 		if is_macos_16_or_higher():
-			painter.setBrush(QColor(255, 255, 255, 25))  # 透明（macOS 16）
+			bg_color.setAlpha(25)
+			painter.setBrush(bg_color)  # 透明（macOS 16）
 		else:
-			painter.setBrush(QColor(255, 255, 255, 200))  # 半透明白（旧系统）
+			bg_color.setAlpha(200)
+			painter.setBrush(bg_color)  # 半透明白（旧系统）
 		painter.setPen(Qt.PenStyle.NoPen)
 		painter.drawPath(path)
 
@@ -1862,10 +2048,13 @@ class InnerWidget(QWidget):
 		rect = QRectF(0, 0, self.width(), self.height())
 		path = QPainterPath()
 		path.addRect(rect)  # 没有圆角
+		bg_color = self.palette().color(QPalette.ColorRole.Window)
 		if is_macos_16_or_higher():
-			painter.setBrush(QColor(255, 255, 255, 25))  # 透明（macOS 16）
+			bg_color.setAlpha(25)
+			painter.setBrush(bg_color)  # 透明（macOS 16）
 		else:
-			painter.setBrush(QColor(255, 255, 255, 200))  # 半透明白（旧系统）
+			bg_color.setAlpha(200)
+			painter.setBrush(bg_color)  # 半透明白（旧系统）
 		painter.setPen(Qt.PenStyle.NoPen)
 		painter.drawPath(path)
 
@@ -1999,7 +2188,8 @@ class PermissionInfoWidget(QWidget):
 		path.addRoundedRect(rect, self.radius, self.radius)
 
 		painter.setClipPath(path)
-		painter.fillPath(path, QColor(255, 255, 255, 255))  # 纯白背景
+		bg_color = self.palette().color(QPalette.ColorRole.Window)
+		painter.fillPath(path, bg_color)
 
 	# 让无边框窗口可拖动
 	def mousePressEvent(self, event):
@@ -2014,19 +2204,22 @@ class PermissionInfoWidget(QWidget):
 
 	def setUpMainWindow(self):
 		# 添加关闭按钮（仿 macOS 左上角红色圆点）
-		self.close_button = QPushButton(self)
-		self.close_button.setFixedSize(12, 12)
+		# self.close_button = QPushButton(self)
+		# self.close_button.setFixedSize(12, 12)
+		# self.close_button.move(10, 10)
+		# self.close_button.setStyleSheet("""
+		# 			QPushButton {
+		# 				background-color: #FF5F57;
+		# 				border-radius: 6px;
+		# 				border: none;
+		# 			}
+		# 			QPushButton:hover {
+		# 				background-color: #BF4943;
+		# 			}
+		# 		""")
+		# self.close_button.clicked.connect(self.close)
+		self.close_button = MacWindowButton("#FF605C", "x", self)
 		self.close_button.move(10, 10)
-		self.close_button.setStyleSheet("""
-					QPushButton {
-						background-color: #FF5F57;
-						border-radius: 6px;
-						border: none;
-					}
-					QPushButton:hover {
-						background-color: #BF4943;
-					}
-				""")
 		self.close_button.clicked.connect(self.close)
 
 		layout = QVBoxLayout()
@@ -2421,7 +2614,8 @@ class window4(QWidget):  # Customization settings
 		path.addRoundedRect(rect, self.radius, self.radius)
 
 		painter.setClipPath(path)
-		painter.fillPath(path, QColor(255, 255, 255, 255))  # 纯白背景
+		bg_color = self.palette().color(QPalette.ColorRole.Window)
+		painter.fillPath(path, bg_color)
 
 	# 让无边框窗口可拖动
 	def mousePressEvent(self, event):
@@ -2436,20 +2630,23 @@ class window4(QWidget):  # Customization settings
 
 	def setUpMainWindow(self):
 		# 添加关闭按钮（仿 macOS 左上角红色圆点）
-		self.close_button = QPushButton(self)
-		self.close_button.setFixedSize(12, 12)
+		# self.close_button = QPushButton(self)
+		# self.close_button.setFixedSize(12, 12)
+		# self.close_button.move(10, 10)
+		# self.close_button.setStyleSheet("""
+		# 	QPushButton {
+		# 		background-color: #FF5F57;
+		# 		border-radius: 6px;
+		# 		border: none;
+		# 	}
+		# 	QPushButton:hover {
+		# 		background-color: #BF4943;
+		# 	}
+		# """)
+		# self.close_button.clicked.connect(self.cancel)
+		self.close_button = MacWindowButton("#FF605C", "x", self)
 		self.close_button.move(10, 10)
-		self.close_button.setStyleSheet("""
-			QPushButton {
-				background-color: #FF5F57;
-				border-radius: 6px;
-				border: none;
-			}
-			QPushButton:hover {
-				background-color: #BF4943;
-			}
-		""")
-		self.close_button.clicked.connect(self.cancel)
+		self.close_button.clicked.connect(self.close)
 
 		home_dir = base_dir
 		tarname1 = "HazelnutAppPath"
