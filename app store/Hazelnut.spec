@@ -9,7 +9,7 @@ info_plist = {
     'LSUIElement': True,
     #'LSBackgroundOnly': True,
     'NSHumanReadableCopyright': 'Copyright © 2025 Yixiang SHEN. All rights reserved.',
-    'CFBundleVersion': '10',
+    'CFBundleVersion': '11',
     'CFBundleShortVersionString': '0.0.7',
     "LSApplicationCategoryType": "public.app-category.productivity",
     "com.apple.security.app-sandbox": True,
