@@ -3,14 +3,14 @@
 
 block_cipher = None
 
-__version__ = '0.0.6'
+__version__ = '0.0.8'
 
 info_plist = {
     'LSUIElement': True,
     #'LSBackgroundOnly': True,
     'NSHumanReadableCopyright': 'Copyright © 2025 Yixiang SHEN. All rights reserved.',
-    'CFBundleVersion': '8',
-    'CFBundleShortVersionString': '0.0.6',
+    'CFBundleVersion': '12',
+    'CFBundleShortVersionString': '0.0.8',
     "LSApplicationCategoryType": "public.app-category.productivity",
     "com.apple.security.app-sandbox": True,
     "NSPrincipalClass": "NSApplication",
@@ -31,7 +31,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['tkinter', '_tkinter', 'tcl', 'tk'],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,

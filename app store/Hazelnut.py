@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (QWidget, QPushButton, QApplication,
 							 QTextEdit, QComboBox, QListWidget, QFileDialog, QGraphicsOpacityEffect,
 							 QStackedWidget, QScrollArea, QGraphicsDropShadowEffect, QMainWindow, QSizePolicy)
 from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal, QSize, QUrl, QPropertyAnimation, QEasingCurve, QRectF, QPoint, QRect
-from PyQt6.QtGui import QAction, QIcon, QColor, QMovie, QDesktopServices, QPixmap, QPainter, QPainterPath, QPainter, QPen, QBrush, QLinearGradient, QMouseEvent, QImage, QSurfaceFormat, QPalette
+from PyQt6.QtGui import QAction, QIcon, QColor, QMovie, QDesktopServices, QPixmap, QPainter, QPainterPath, QPainter, QPen, QBrush, QLinearGradient, QMouseEvent, QImage, QSurfaceFormat, QPalette, QCursor
 import PyQt6.QtGui
 import PyQt6.sip
 import webbrowser
@@ -28,7 +28,6 @@ from pathlib import Path
 from pynput import mouse
 import urllib.parse
 from PIL import Image, ImageFilter
-import pyautogui
 import xattr
 import plistlib
 import datetime
@@ -453,7 +452,7 @@ class window_about(QWidget):  # 增加说明页面(About)
 		widg2.setLayout(blay2)
 
 		widg3 = QWidget()
-		lbl1 = QLabel('Version 0.0.7', self)
+		lbl1 = QLabel('Version 0.0.8', self)
 		blay3 = QHBoxLayout()
 		blay3.setContentsMargins(0, 0, 0, 0)
 		blay3.addStretch()
@@ -1913,8 +1912,10 @@ class CircleButtonWidget(QWidget):
 		super().resizeEvent(event)
 
 
-class DragMonitor:
-	def __init__(self, on_trigger):
+class DragMonitor(QThread):
+	trigger_signal = pyqtSignal()  # 新增信号
+	def __init__(self, on_trigger=None):
+		super().__init__()
 		home_dir = base_dir
 		tarname1 = "HazelnutAppPath"
 		fulldir1 = os.path.join(home_dir, tarname1)
@@ -1934,28 +1935,52 @@ class DragMonitor:
 		self.listener = None
 		self._running = False
 
-	def start(self):
-		if self._running:
-			return
-		self.listener = mouse.Listener(
-			on_move=self.on_move,
-			on_click=self.on_click
-		)
-		self.listener.start()
+		# 只读取一次允许应用列表
+		with codecs.open(self.fulldir3, 'r', encoding='utf-8') as f:
+			self.allowed_apps = [line.strip() for line in f if line.strip()]
+
+		self.trigger_signal.connect(self.handle_trigger)
+
+	def handle_trigger(self):
+		if self.on_trigger:
+			self.on_trigger()
+
+	def run(self):
 		self._running = True
+		with mouse.Listener(
+				on_move=self.on_move,
+				on_click=self.on_click
+		) as self.listener:
+			self.listener.join()
+
+	# def startIt(self):
+	# 	if self._running:
+	# 		return
+	# 	self.listener = mouse.Listener(
+	# 		on_move=self.on_move,
+	# 		on_click=self.on_click
+	# 	)
+	# 	self.listener.start()
+	# 	self._running = True
 
 	def stop(self):
+		self._running = False
 		if self.listener is not None:
 			self.listener.stop()
-			self.listener.join()  # 等待线程完全退出
 			self.listener = None
-		self._running = False
 
-	def reset_state(self):
-		self.dragging = False
-		self.last_pos = None
-		self.last_direction = None
-		self.direction_changes = 0
+	# def stop(self):
+	# 	if self.listener is not None:
+	# 		self.listener.stop()
+	# 		self.listener.join()  # 等待线程完全退出
+	# 		self.listener = None
+	# 	self._running = False
+
+	# def reset_state(self):
+	# 	self.dragging = False
+	# 	self.last_pos = None
+	# 	self.last_direction = None
+	# 	self.direction_changes = 0
 
 	def on_click(self, x, y, button, pressed):
 		if button.name == "left":
@@ -1975,12 +2000,15 @@ class DragMonitor:
 		if app_name == "loginwindow":
 			return
 
-		ALLOWED_APPS = codecs.open(self.fulldir3, 'r', encoding='utf-8').read()
-		ALLOWED_APPS_LIST = ALLOWED_APPS.split('\n')
-		while '' in ALLOWED_APPS_LIST:
-			ALLOWED_APPS_LIST.remove('')
+		# ALLOWED_APPS = codecs.open(self.fulldir3, 'r', encoding='utf-8').read()
+		# ALLOWED_APPS_LIST = ALLOWED_APPS.split('\n')
+		# while '' in ALLOWED_APPS_LIST:
+		# 	ALLOWED_APPS_LIST.remove('')
 
-		if app_name not in ALLOWED_APPS_LIST:
+		# if app_name not in ALLOWED_APPS_LIST:
+		# 	return
+
+		if app_name not in self.allowed_apps:
 			return
 
 		if self.last_pos is None:
@@ -2001,7 +2029,7 @@ class DragMonitor:
 			self.direction_changes += 1
 			#print(f"方向改变为: {direction}, 累积: {self.direction_changes}")
 			if self.direction_changes >= 3:
-				self.on_trigger()
+				self.trigger_signal.emit()  # 用信号通知主线程
 				self.direction_changes = 0
 
 		self.last_direction = direction
@@ -2057,7 +2085,6 @@ class InnerWidget(QWidget):
 			painter.setBrush(bg_color)  # 半透明白（旧系统）
 		painter.setPen(Qt.PenStyle.NoPen)
 		painter.drawPath(path)
-
 
 
 class HorizontalButtonWindow(OuterWidget):
@@ -2487,19 +2514,37 @@ class MainWindow(QMainWindow):
 
 			self.WEIGHT = int(self.screen().availableGeometry().width())
 			self.HEIGHT = int(self.screen().availableGeometry().height())
-			x, y = pyautogui.position()
-			if x + 440 > self.WEIGHT:
-				x = self.WEIGHT - 440
-			if y + 620 > self.HEIGHT:
-				y = self.HEIGHT - 620
+			# pos = QCursor.pos()
+			# x, y = pos.x(), pos.y()
+			# if x + 440 > self.WEIGHT:
+			# 	x = self.WEIGHT - 440
+			# if y + 620 > self.HEIGHT:
+			# 	y = self.HEIGHT - 620
+			win_w, win_h = self.width(), self.height()
+			pos = QCursor.pos()
+			x, y = pos.x(), pos.y()
+
+			# 让窗口居中于鼠标
+			x = x - win_w // 2
+			y = y - win_h // 2
+
+			# 保证窗口不会超出屏幕
+			if x < 0:
+				x = 0
+			if y < 0:
+				y = 0
+			if x + win_w > self.WEIGHT:
+				x = self.WEIGHT - win_w
+			if y + win_h > self.HEIGHT:
+				y = self.HEIGHT - win_h
 			self.move(x, y)
 			# 横向按钮窗口跟随主窗口
-			#self.hori_btn_window.move(x + self.hori_btn_offset[0], y + self.hori_btn_offset[1])
+			# self.hori_btn_window.move(x + self.hori_btn_offset[0], y + self.hori_btn_offset[1])
 
 			self.show()
 			self.show_button_with_timeout()
-			self.monitor.stop()  # 新增：窗口显示后停止监听
-			self.monitor.reset_state()  # 新增：显示窗口时重置 DragMonitor 状态
+			# self.monitor.reset_state()  # 新增：显示窗口时重置 DragMonitor 状态
+			self.stop_monitor()  # 新增：窗口显示后停止监听
 		except Exception as e:
 			# 发生异常时打印错误信息
 			p = "程序发生异常-显示时:" + str(e)
@@ -2515,9 +2560,19 @@ class MainWindow(QMainWindow):
 
 	def closeEvent(self, event):
 		self.hori_btn_window.close()
-		self.monitor.reset_state()  # 新增：显示窗口时重置 DragMonitor 状态
-		self.monitor.start()  # 新增：窗口关闭后重新监听
+		# self.monitor.reset_state()  # 新增：显示窗口时重置 DragMonitor 状态
+		self.start_monitor()  # 新增：窗口关闭后重新监听
 		super().closeEvent(event)
+
+	def stop_monitor(self):
+		if self.monitor is not None:
+			self.monitor.stop()
+			self.monitor = None
+
+	def start_monitor(self):
+		if self.monitor is None:
+			self.monitor = DragMonitor(on_trigger=self.show_window_and_button)
+			self.monitor.start()
 
 	def on_path_changed(self, path):
 		#print("MainWindow got path:", path)

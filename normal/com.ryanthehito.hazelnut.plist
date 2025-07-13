@@ -6,7 +6,7 @@
     <string>com.ryanthehito.hazelnut</string>
     <key>ProgramArguments</key>
     <array>
-      <string>/Applications/Hazelnut Tags.app/Contents/MacOS/Hazelnut Tags</string>
+      <string>/Applications/Hazelnut.app/Contents/MacOS/Hazelnut</string>
       <string>autostart</string>
     </array>
     <key>RunAtLoad</key>
