@@ -452,7 +452,7 @@ class window_about(QWidget):  # 增加说明页面(About)
 		widg2.setLayout(blay2)
 
 		widg3 = QWidget()
-		lbl1 = QLabel('Version 0.0.8', self)
+		lbl1 = QLabel('Version 0.0.9', self)
 		blay3 = QHBoxLayout()
 		blay3.setContentsMargins(0, 0, 0, 0)
 		blay3.addStretch()
@@ -996,7 +996,7 @@ class window_update(QWidget):  # 增加更新页面（Check for Updates）
 		widg5.setLayout(blay5)
 
 		widg3 = QWidget()
-		self.lbl = QLabel('Current version: v0.0.8', self)
+		self.lbl = QLabel('Current version: v0.0.9', self)
 		blay3 = QHBoxLayout()
 		blay3.setContentsMargins(0, 0, 0, 0)
 		# blay3.addStretch()
@@ -1071,9 +1071,9 @@ class window_update(QWidget):  # 增加更新页面（Check for Updates）
 			pattern2 = re.compile(r'(v\d+\.\d+\.\d+)\sLatest')
 			result = pattern2.findall(plain_text_utf8)
 			result = ''.join(result)
-			nowversion = self.lbl.text().replace('Current Version: ', '')
+			nowversion = self.lbl.text().replace('Current Version: ', '').replace('Current version: ', '')
 			if result == nowversion:
-				alertupdate = result + '. You are up to date!'
+				alertupdate = result + ' (up-to-date)'
 				self.lbl2.setText(alertupdate)
 				self.lbl2.adjustSize()
 			else:
@@ -1916,6 +1916,7 @@ class DragMonitor(QThread):
 	trigger_signal = pyqtSignal()  # 新增信号
 	def __init__(self, on_trigger=None):
 		super().__init__()
+		self.last_move_time = 0
 		home_dir = base_dir
 		tarname1 = "HazelnutAppPath"
 		fulldir1 = os.path.join(home_dir, tarname1)
@@ -1932,8 +1933,10 @@ class DragMonitor(QThread):
 		self.last_pos = None
 		self.last_direction = None
 		self.direction_changes = 0
-		self.listener = None
-		self._running = False
+		# self.listener = None
+		# self._running = False
+		self._should_run = True
+		self._active = False  # 新增，是否监听
 
 		# 只读取一次允许应用列表
 		with codecs.open(self.fulldir3, 'r', encoding='utf-8') as f:
@@ -1945,13 +1948,19 @@ class DragMonitor(QThread):
 		if self.on_trigger:
 			self.on_trigger()
 
+	def set_active(self, active: bool):
+		self._active = active
+
 	def run(self):
-		self._running = True
+		#self._should_run = True
 		with mouse.Listener(
 				on_move=self.on_move,
 				on_click=self.on_click
 		) as self.listener:
-			self.listener.join()
+			while self._should_run:
+				time.sleep(0.05)
+			#self.listener = None
+		print('run')
 
 	# def startIt(self):
 	# 	if self._running:
@@ -1964,10 +1973,25 @@ class DragMonitor(QThread):
 	# 	self._running = True
 
 	def stop(self):
-		self._running = False
-		if self.listener is not None:
-			self.listener.stop()
-			self.listener = None
+		# self._running = False
+		self._should_run = False
+		# if self.listener:
+		# 	self.listener.stop()
+		# 	self.listener = None
+		# 	print('stop')
+
+	# def start_monitoring(self):
+	# 	if not self.isRunning():
+	# 		self._running = True
+	# 		self.start()
+	# 		print('start monitoring')
+	#
+	# def stop_monitoring(self):
+	# 	self._running = False
+	# 	if self.listener is not None:
+	# 		self.listener.stop()
+	# 		self.listener = None
+	# 		print('stop monitoring')
 
 	# def stop(self):
 	# 	if self.listener is not None:
@@ -1976,29 +2000,43 @@ class DragMonitor(QThread):
 	# 		self.listener = None
 	# 	self._running = False
 
-	# def reset_state(self):
-	# 	self.dragging = False
+	def reset_state(self):
+		self.dragging = False
 	# 	self.last_pos = None
 	# 	self.last_direction = None
 	# 	self.direction_changes = 0
 
 	def on_click(self, x, y, button, pressed):
+		if not self._active:
+			return
 		if button.name == "left":
 			self.dragging = pressed
 			if not pressed:
 				self.last_pos = None
 				self.last_direction = None
 				self.direction_changes = 0
+		#print(f"on_click: button={button}, pressed={pressed}, dragging={self.dragging}")
 
 	def on_move(self, x, y):
+		#print(self._active)
+		#print(self.dragging)
+		if not self._active:
+			return
+
 		if not self.dragging:
 			return
 
-		active_app = NSWorkspace.sharedWorkspace().activeApplication()
-		app_name = active_app['NSApplicationName']
-
-		if app_name == "loginwindow":
+		now = time.time()
+		if now - self.last_move_time < 0.03:  # 至少每 30ms 一次（≈33fps）
 			return
+
+		self.last_move_time = now
+
+		# active_app = NSWorkspace.sharedWorkspace().activeApplication()
+		# app_name = active_app['NSApplicationName']
+		#
+		# if app_name == "loginwindow":
+		# 	return
 
 		# ALLOWED_APPS = codecs.open(self.fulldir3, 'r', encoding='utf-8').read()
 		# ALLOWED_APPS_LIST = ALLOWED_APPS.split('\n')
@@ -2008,8 +2046,8 @@ class DragMonitor(QThread):
 		# if app_name not in ALLOWED_APPS_LIST:
 		# 	return
 
-		if app_name not in self.allowed_apps:
-			return
+		# if app_name not in self.allowed_apps:
+		# 	return
 
 		if self.last_pos is None:
 			self.last_pos = (x, y)
@@ -2032,8 +2070,59 @@ class DragMonitor(QThread):
 				self.trigger_signal.emit()  # 用信号通知主线程
 				self.direction_changes = 0
 
+		#print(self.direction_changes)
+
 		self.last_direction = direction
 		self.last_pos = (x, y)
+
+
+# 在合适位置（比如 DragMonitor 之后）添加
+class AppEventListener(NSObject):
+	"""监听 macOS 前台应用变化，动态控制 DragMonitor 启停"""
+
+	def initWithMonitor_(self, monitor):
+		self = objc.super(AppEventListener, self).init()
+		if self is None:
+			return None
+		self.monitor = monitor
+		self.allowed_apps = self.load_allowed_apps()
+		#self.is_monitoring = False
+
+		nc = NSWorkspace.sharedWorkspace().notificationCenter()
+		nc.addObserver_selector_name_object_(
+			self, objc.selector(self.app_changed_, signature=b"v@:@"),
+			"NSWorkspaceDidActivateApplicationNotification", None
+		)
+		return self
+
+	def load_allowed_apps(self):
+		# 读取允许 app 列表
+		home_dir = base_dir
+		tarname1 = "HazelnutAppPath"
+		fulldir1 = os.path.join(home_dir, tarname1)
+		if not os.path.exists(fulldir1):
+			os.mkdir(fulldir1)
+		tarname2 = "Allow.txt"
+		fulldir3 = os.path.join(fulldir1, tarname2)
+		if not os.path.exists(fulldir3):
+			with open(self.fulldir3, 'a', encoding='utf-8') as f0:
+				f0.write('Finder\n')
+			return ["Finder"]
+		with codecs.open(fulldir3, 'r', encoding='utf-8') as f:
+			return [line.strip() for line in f if line.strip()]
+
+	def app_changed_(self, sender, notification):
+		active_app = NSWorkspace.sharedWorkspace().activeApplication()
+		app_name = active_app['NSApplicationName']
+		self.allowed_apps = self.load_allowed_apps()  # 动态刷新
+		if app_name in self.allowed_apps:
+			self.monitor.set_active(True)
+		else:
+			self.monitor.set_active(False)
+
+	def stop_listening(self):
+		nc = NSWorkspace.sharedWorkspace().notificationCenter()
+		nc.removeObserver_(self)
 
 
 class OuterWidget(QWidget):
@@ -2566,13 +2655,23 @@ class MainWindow(QMainWindow):
 
 	def stop_monitor(self):
 		if self.monitor is not None:
-			self.monitor.stop()
-			self.monitor = None
+			self.monitor.set_active(False)
+			self.monitor.reset_state()
+			# self.monitor.stop()
+			# self.monitor.wait()
+			# self.monitor = None
 
 	def start_monitor(self):
-		if self.monitor is None:
-			self.monitor = DragMonitor(on_trigger=self.show_window_and_button)
-			self.monitor.start()
+		# # 先停掉旧的
+		# if self.monitor is not None:
+		# 	self.monitor.stop()
+		# 	self.monitor.wait()  # 等待线程退出
+		# 	self.monitor = None
+		# # 新建并启动
+		# self.monitor = DragMonitor(on_trigger=self.show_window_and_button)
+		# self.monitor.start()
+		if self.monitor is not None:
+			self.monitor.set_active(True)
 
 	def on_path_changed(self, path):
 		#print("MainWindow got path:", path)
@@ -3035,6 +3134,7 @@ if __name__ == '__main__':
 				window.show_window_signal.emit()
 
 			monitor = DragMonitor(on_trigger=show_window)
+			app_event_listener = AppEventListener.alloc().initWithMonitor_(monitor)
 			window = MainWindow(monitor)
 			window.show()
 			window.raise_()
